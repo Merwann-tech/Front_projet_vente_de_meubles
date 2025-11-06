@@ -12,26 +12,26 @@ export default function UserForm() {
   });
   const token = sessionStorage.getItem("token");
 
-//   useEffect(() => {
-//     fetch(`${url}/volunteers/token/`, {
-//       headers: {
-//         authorization: `Bearer ${token}`,
-//       },
-//     }).then(async (response) => {
-//       if (response.status !== 200) {
-//         window.location.href = "/";
-//       } else {
-//         const data = await response.json();
-//         setFormData({
-//           firstname: data.firstname || "",
-//           lastname: data.lastname || "",
-//           email: data.email || "",
-//           password: "",
-//           city: data.city || "",
-//         });
-//       }
-//     });
-//   }, []);
+  useEffect(() => {
+    fetch(`${url}/users/token`, {
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+    }).then(async (response) => {
+      if (response.status !== 200) {
+        window.location.href = "/";
+      } else {
+        const data = await response.json();
+        setFormData({
+          firstname: data.firstname || "",
+          lastname: data.lastname || "",
+          email: data.email || "",
+          password: "",
+          city: data.city || "",
+        });
+      }
+    });
+  }, []);
 
   const handleChange = (e: { target: { name: any; value: any; }; }) => {
     const { name, value } = e.target;
@@ -43,7 +43,7 @@ export default function UserForm() {
 
   const handleSubmit = async (e: { preventDefault: () => void; }) => {
     e.preventDefault();
-    const res = await fetch(`${url}/volunteers/token`, {
+    const res = await fetch(`${url}/users/token`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -55,7 +55,7 @@ export default function UserForm() {
       window.location.href = "/";
     }
     let response = await res.json();
-    let error = { error: "Email already exists" };
+    let error = { error: "L'email existe déjà" };
     if (response["error"] == error["error"]) {
       alert("Email déjà utilisé");
     } else {
