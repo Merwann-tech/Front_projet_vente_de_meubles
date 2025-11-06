@@ -1,5 +1,5 @@
 "use client";
-import { Check,X } from "lucide-react";
+import { Check,X,UserStar,UserRoundPen } from "lucide-react";
 import { useState, useEffect } from "react";
 const url = process.env.NEXT_PUBLIC_URL;
 
@@ -66,7 +66,7 @@ export default function UsersCard({ name }: VolunteerCardProps) {
                             window.location.reload();
                         }   
                     }}>
-                    <Check/>
+                    <UserRoundPen/>
                     </button>
                 ) : (
                     <button  className="bg-red-100 text-red-600 p-2 rounded-lg hover:bg-red-200"
@@ -88,7 +88,52 @@ export default function UsersCard({ name }: VolunteerCardProps) {
                             window.location.reload();
                         }   
                     }}>
-                    <X />
+                    <UserRoundPen />
+                    </button>
+                )}
+                 {user.admin === 1 ? (
+                    <button  className="bg-green-100 text-green-600 p-2 rounded-lg hover:bg-green-200"
+                    onClick={async () => {
+                        if(confirm(`Veux-tu vraiment retirer les droits de administrateur à ${user.firstname} ${user.lastname} ?` )=== false){
+                            return;
+                        }
+                      const res = await fetch(`${url}/users/removeAdmin/${user.id}`, {
+                        method: "PUT",
+                        headers: {
+                          authorization: `Bearer ${token}`,
+                        },
+                      });   
+                        if (res.status !== 200) {
+                            window.location.href = "/";
+                        } else {
+                            let response = await res.json();
+                            alert(response["success"]);
+                            window.location.reload();
+                        }   
+                    }}>
+                    <UserStar/>
+                    </button>
+                ) : (
+                    <button  className="bg-red-100 text-red-600 p-2 rounded-lg hover:bg-red-200"
+                    onClick={async () => {
+                        if(confirm(`Veux-tu vraiment donner les droits de administrateur à ${user.firstname} ${user.lastname} ?` )=== false){
+                            return;
+                        }
+                      const res = await fetch(`${url}/users/addAdmin/${user.id}`, {
+                        method: "PUT",
+                        headers: {
+                          authorization: `Bearer ${token}`,
+                        },
+                      });   
+                        if (res.status !== 200) {
+                            window.location.href = "/";
+                        } else {
+                            let response = await res.json();
+                            alert(response["success"]);
+                            window.location.reload();
+                        }   
+                    }}>
+                    <UserStar />
                     </button>
                 )}
                 
