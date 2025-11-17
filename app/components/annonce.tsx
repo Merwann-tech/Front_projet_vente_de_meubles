@@ -100,7 +100,6 @@ export default function Annonce() {
           <div>
             <label className="block font-medium mb-1">Images</label>
             <input
-            required
             type="file"
             accept="image/*"
             multiple
