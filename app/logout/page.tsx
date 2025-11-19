@@ -1,28 +1,27 @@
 "use client";
-import { useState } from "react";
 import NavbarWrapper from "../components/navbarWarrper";
+import Footer from "../components/footer";
 import UserForm from "../components/userForm";
-const url = process.env.NEXT_PUBLIC_URL;
 
-
-export default function Home() {
-    return (
-        <div>
-            <NavbarWrapper/>
-            <div className="bg-gray-50 flex justify-center py-10">
-                <div className="bg-white rounded-2xl shadow p-5 w-full max-w-sm">
-                    <UserForm />
-                    <button
-                        onClick={() => {
-                            sessionStorage.removeItem("token");
-                            window.location.href = "/";
-                        }}
-                        className="w-full bg-gray-700 hover:bg-gray-800 text-white font-medium py-2 rounded-lg flex items-center justify-center gap-2 transition"
-                    >
-                        Déconnexion
-                    </button>
-                </div>
-            </div>
+export default function LogoutPage() {
+  return (
+    <div className="bg-gray-50 text-gray-900 flex flex-col min-h-screen">
+      <NavbarWrapper />
+      <main className="flex-1 flex flex-col items-center justify-center">
+        <div className="bg-white mt-2 rounded-2xl shadow p-8 w-full max-w-sm flex flex-col items-center">
+          <UserForm />
+          <button
+            onClick={() => {
+              sessionStorage.removeItem("token");
+              window.location.href = "/";
+            }}
+            className="w-full px-4 py-3 bg-teal-600 text-white rounded-full font-semibold shadow hover:bg-teal-700 transition mt-6"
+          >
+            Se déconnecter
+          </button>
         </div>
-    );
+      </main>
+      <Footer />
+    </div>
+  );
 }
