@@ -2,7 +2,10 @@
 const url = process.env.NEXT_PUBLIC_URL;
 
 
-export async function checkTokenRole(token: string): Promise<'none' | 'user' | 'moderator' | 'admin'> {
+export async function checkTokenRole(token: string | null): Promise<'none' | 'user' | 'moderator' | 'admin'> {
+  if (!token){
+    return 'none'
+  }
   try {
     const res = await fetch(`${url}/token`, {
       method: 'GET',
@@ -11,7 +14,7 @@ export async function checkTokenRole(token: string): Promise<'none' | 'user' | '
       },
     });
 
-    if (!res.ok) return 'none'; // cas token invalide ou 401
+    if (!res.ok) return 'none';
 
     const data = await res.json();
     if (data.message.includes('admin')) return 'admin';

@@ -2,6 +2,7 @@
 import Footer from "../components/footer";
 import NavbarWrapper from "../components/navbarWarrper";
 import { useEffect, useState } from "react";
+import Authorization from "../lib/auth";
 const url = process.env.NEXT_PUBLIC_URL;
 
 interface Furniture {
@@ -53,237 +54,261 @@ export default function GestionAnnonces() {
 
   return (
     <div className="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
-      <NavbarWrapper />
-      <div className="max-w-6xl mx-auto p-6 flex-1 w-full">
-        <header className="mb-6 text-center">
-          <h1 className="text-3xl font-extrabold mb-1 text-teal-700">
-            Admin — Liste des annonces
-          </h1>
-          <p className="text-sm text-gray-600">
-            Rechercher, valider, refuser ou supprimer des annonces.
-          </p>
-        </header>
+      <Authorization minRole="moderator">
+        <NavbarWrapper />
+        <div className="max-w-6xl mx-auto p-6 flex-1 w-full">
+          <header className="mb-6 text-center">
+            <h1 className="text-3xl font-extrabold mb-1 text-teal-700">
+              Admin — Liste des annonces
+            </h1>
+            <p className="text-sm text-gray-600">
+              Rechercher, valider, refuser ou supprimer des annonces.
+            </p>
+          </header>
 
-        <div className="mb-6 flex flex-col sm:flex-row gap-3 items-center justify-center">
-          <input
-            id="search"
-            type="text"
-            placeholder="Rechercher par titre, description ou ville..."
-            className="flex-1 px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white shadow"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <select
-            className="px-4 py-2 rounded-full border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 shadow"
-            aria-label="Filtrer par statut"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-          >
-            <option value="all">Tous les statuts</option>
-            <option value="attente de validation">En attente</option>
-            <option value="valider">Validée</option>
-            <option value="refuser">Refusée</option>
-            <option value="vendu">Vendu</option>
-          </select>
-          <button
-            id="searchBtn"
-            className="px-6 py-2 bg-teal-600 text-white rounded-full font-semibold shadow hover:bg-teal-700 transition"
-            onClick={() => {}}
-          >
-            Rechercher
-          </button>
-          <button
-            id="clearBtn"
-            className="px-6 py-2 bg-white border border-gray-300 rounded-full font-semibold shadow hover:bg-gray-100 transition"
-            onClick={() => {
-              setSearch("");
-              setStatus("all");
-            }}
-          >
-            Effacer
-          </button>
-        </div>
-
-        <main id="list" className="space-y-4">
-          {loading && <div>Chargement...</div>}
-          {!loading && furnitures.length === 0 && (
-            <div className="text-gray-500 text-center">Aucune annonce trouvée.</div>
-          )}
-          {furnitures.map((furniture) => (
-            <article
-              key={furniture.id}
-              className="bg-white p-6 rounded-2xl shadow-lg flex flex-col sm:flex-row gap-6 items-start border border-gray-100"
-              data-title={furniture.title}
-              data-description={furniture.description}
-              data-city={furniture.city}
-              data-id={furniture.id}
+          <div className="mb-6 flex flex-col sm:flex-row gap-3 items-center justify-center">
+            <input
+              id="search"
+              type="text"
+              placeholder="Rechercher par titre, description ou ville..."
+              className="flex-1 px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white shadow"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <select
+              className="px-4 py-2 rounded-full border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 shadow"
+              aria-label="Filtrer par statut"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
             >
-              {furniture.images && furniture.images.split(",")[0] ? (
-                <div
-                  className="card-img bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center shadow"
-                  style={{ width: "120px", height: "120px", minWidth: "120px" }}
-                >
-                  <img
-                    src={url + furniture.images.split(",")[0]}
-                    alt={furniture.title}
-                    className="object-cover w-full h-full"
-                    style={{ maxWidth: "120px", maxHeight: "120px" }}
-                  />
-                </div>
-              ) : (
-                <div
-                  className="card-img bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center shadow"
-                  style={{ width: "120px", height: "120px", minWidth: "120px" }}
-                >
-                  <span className="text-gray-400 text-xs">Pas d'image</span>
-                </div>
-              )}
+              <option value="all">Tous les statuts</option>
+              <option value="attente de validation">En attente</option>
+              <option value="valider">Validée</option>
+              <option value="refuser">Refusée</option>
+              <option value="vendu">Vendu</option>
+            </select>
+            <button
+              id="searchBtn"
+              className="px-6 py-2 bg-teal-600 text-white rounded-full font-semibold shadow hover:bg-teal-700 transition"
+              onClick={() => {}}
+            >
+              Rechercher
+            </button>
+            <button
+              id="clearBtn"
+              className="px-6 py-2 bg-white border border-gray-300 rounded-full font-semibold shadow hover:bg-gray-100 transition"
+              onClick={() => {
+                setSearch("");
+                setStatus("all");
+              }}
+            >
+              Effacer
+            </button>
+          </div>
 
-              <div className="flex-1 w-full">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                  <div>
-                    <h2 className="text-xl font-bold text-teal-700">{furniture.title}</h2>
-                    <div className="text-sm text-gray-600">{furniture.city}</div>
-                  </div>
-                  <div
-                    className={`px-3 py-1 rounded-full text-sm font-semibold status ${
-                      furniture.status === "valider"
-                        ? "bg-green-100 text-green-800"
-                        : furniture.status === "refuser"
-                        ? "bg-red-100 text-red-800"
-                        : furniture.status === "attente de validation"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : furniture.status === "vendu"
-                        ? "bg-blue-100 text-blue-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {furniture.status}
-                  </div>
-                </div>
-
-                <p className="mt-2 text-sm text-gray-700">{furniture.description}</p>
-
-                <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-                  <div className="text-lg font-bold text-teal-700">{furniture.price} €</div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      data-action="validate"
-                      className="action-btn px-4 py-1 bg-green-600 text-white rounded-full font-semibold hover:bg-green-700 transition"
-                      onClick={async () => {
-                        try {
-                          const token = sessionStorage.getItem("token");
-                          const res = await fetch(
-                            `${url}/furnitures/validate/${furniture.id}`,
-                            {
-                              method: "PUT",
-                              headers: {
-                                Authorization: `Bearer ${token}`,
-                                "Content-Type": "application/json",
-                              },
-                            }
-                          );
-                          if (res.ok) {
-                            setFurnitures((prev) =>
-                              prev.map((f) =>
-                                f.id === furniture.id
-                                  ? { ...f, status: "valider" }
-                                  : f
-                              )
-                            );
-                          } else {
-                            alert("Erreur lors de la validation.");
-                          }
-                        } catch (e) {
-                          alert("Erreur réseau.");
-                        }
-                      }}
-                    >
-                      Valider
-                    </button>
-                    <button
-                      data-action="refuse"
-                      className="action-btn px-4 py-1 bg-red-600 text-white rounded-full font-semibold hover:bg-red-700 transition"
-                      onClick={async () => {
-                        try {
-                          const token = sessionStorage.getItem("token");
-                          const res = await fetch(
-                            `${url}/furnitures/reject/${furniture.id}`,
-                            {
-                              method: "PUT",
-                              headers: {
-                                Authorization: `Bearer ${token}`,
-                                "Content-Type": "application/json",
-                              },
-                            }
-                          );
-                          if (res.ok) {
-                            setFurnitures((prev) =>
-                              prev.map((f) =>
-                                f.id === furniture.id
-                                  ? { ...f, status: "refuser" }
-                                  : f
-                              )
-                            );
-                          } else {
-                            alert("Erreur lors du refus.");
-                          }
-                        } catch (e) {
-                          alert("Erreur réseau.");
-                        }
-                      }}
-                    >
-                      Refuser
-                    </button>
-                    <button
-                      onClick={async () => {
-                        if (
-                          confirm(
-                            `Veux-tu vraiment supprimer l'annonce ${furniture.title} ?`
-                          )
-                        ) {
-                          fetch(`${url}/furnitures/moderator/${furniture.id}`, {
-                            method: "DELETE",
-                            headers: {
-                              authorization: `Bearer ${sessionStorage.getItem(
-                                "token"
-                              )}`,
-                            },
-                          }).then(async (response) => {
-                            if (response.status !== 200) {
-                              window.location.href = "/";
-                            } else {
-                              let data = await response.json();
-                              alert(data["success"]);
-                              setFurnitures((prev) =>
-                                prev.filter((f) => f.id !== furniture.id)
-                              );
-                            }
-                          });
-                        }
-                      }}
-                      className="btn-delete px-4 py-1 bg-gray-100 border border-gray-300 rounded-full font-semibold hover:bg-gray-200 transition"
-                    >
-                      Supprimer
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-2 text-xs text-gray-500">
-                  Créé: {furniture.created_at} • mis à jour: {furniture.updated_at}
-                </div>
-
-                <div className="mt-2 text-xs text-gray-500">
-                  Couleur: {furniture.color || "N/A"} • Matériau:{" "}
-                  {furniture.material || "N/A"} • Par utilisateur:{" "}
-                  {furniture.user_mail || "N/A"}
-                </div>
+          <main id="list" className="space-y-4">
+            {loading && <div>Chargement...</div>}
+            {!loading && furnitures.length === 0 && (
+              <div className="text-gray-500 text-center">
+                Aucune annonce trouvée.
               </div>
-            </article>
-          ))}
-        </main>
-      </div>
-      <Footer/>
+            )}
+            {furnitures.map((furniture) => (
+              <article
+                key={furniture.id}
+                className="bg-white p-6 rounded-2xl shadow-lg flex flex-col sm:flex-row gap-6 items-start border border-gray-100"
+                data-title={furniture.title}
+                data-description={furniture.description}
+                data-city={furniture.city}
+                data-id={furniture.id}
+              >
+                {furniture.images && furniture.images.split(",")[0] ? (
+                  <div
+                    className="card-img bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center shadow"
+                    style={{
+                      width: "120px",
+                      height: "120px",
+                      minWidth: "120px",
+                    }}
+                  >
+                    <img
+                      src={url + furniture.images.split(",")[0]}
+                      alt={furniture.title}
+                      className="object-cover w-full h-full"
+                      style={{ maxWidth: "120px", maxHeight: "120px" }}
+                    />
+                  </div>
+                ) : (
+                  <div
+                    className="card-img bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center shadow"
+                    style={{
+                      width: "120px",
+                      height: "120px",
+                      minWidth: "120px",
+                    }}
+                  >
+                    <span className="text-gray-400 text-xs">Pas d'image</span>
+                  </div>
+                )}
+
+                <div className="flex-1 w-full">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                    <div>
+                      <h2 className="text-xl font-bold text-teal-700">
+                        {furniture.title}
+                      </h2>
+                      <div className="text-sm text-gray-600">
+                        {furniture.city}
+                      </div>
+                    </div>
+                    <div
+                      className={`px-3 py-1 rounded-full text-sm font-semibold status ${
+                        furniture.status === "valider"
+                          ? "bg-green-100 text-green-800"
+                          : furniture.status === "refuser"
+                          ? "bg-red-100 text-red-800"
+                          : furniture.status === "attente de validation"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : furniture.status === "vendu"
+                          ? "bg-blue-100 text-blue-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {furniture.status}
+                    </div>
+                  </div>
+
+                  <p className="mt-2 text-sm text-gray-700">
+                    {furniture.description}
+                  </p>
+
+                  <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+                    <div className="text-lg font-bold text-teal-700">
+                      {furniture.price} €
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        data-action="validate"
+                        className="action-btn px-4 py-1 bg-green-600 text-white rounded-full font-semibold hover:bg-green-700 transition"
+                        onClick={async () => {
+                          try {
+                            const token = sessionStorage.getItem("token");
+                            const res = await fetch(
+                              `${url}/furnitures/validate/${furniture.id}`,
+                              {
+                                method: "PUT",
+                                headers: {
+                                  Authorization: `Bearer ${token}`,
+                                  "Content-Type": "application/json",
+                                },
+                              }
+                            );
+                            if (res.ok) {
+                              setFurnitures((prev) =>
+                                prev.map((f) =>
+                                  f.id === furniture.id
+                                    ? { ...f, status: "valider" }
+                                    : f
+                                )
+                              );
+                            } else {
+                              alert("Erreur lors de la validation.");
+                            }
+                          } catch (e) {
+                            alert("Erreur réseau.");
+                          }
+                        }}
+                      >
+                        Valider
+                      </button>
+                      <button
+                        data-action="refuse"
+                        className="action-btn px-4 py-1 bg-red-600 text-white rounded-full font-semibold hover:bg-red-700 transition"
+                        onClick={async () => {
+                          try {
+                            const token = sessionStorage.getItem("token");
+                            const res = await fetch(
+                              `${url}/furnitures/reject/${furniture.id}`,
+                              {
+                                method: "PUT",
+                                headers: {
+                                  Authorization: `Bearer ${token}`,
+                                  "Content-Type": "application/json",
+                                },
+                              }
+                            );
+                            if (res.ok) {
+                              setFurnitures((prev) =>
+                                prev.map((f) =>
+                                  f.id === furniture.id
+                                    ? { ...f, status: "refuser" }
+                                    : f
+                                )
+                              );
+                            } else {
+                              alert("Erreur lors du refus.");
+                            }
+                          } catch (e) {
+                            alert("Erreur réseau.");
+                          }
+                        }}
+                      >
+                        Refuser
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (
+                            confirm(
+                              `Veux-tu vraiment supprimer l'annonce ${furniture.title} ?`
+                            )
+                          ) {
+                            fetch(
+                              `${url}/furnitures/moderator/${furniture.id}`,
+                              {
+                                method: "DELETE",
+                                headers: {
+                                  authorization: `Bearer ${sessionStorage.getItem(
+                                    "token"
+                                  )}`,
+                                },
+                              }
+                            ).then(async (response) => {
+                              if (response.status !== 200) {
+                                window.location.href = "/";
+                              } else {
+                                let data = await response.json();
+                                alert(data["success"]);
+                                setFurnitures((prev) =>
+                                  prev.filter((f) => f.id !== furniture.id)
+                                );
+                              }
+                            });
+                          }
+                        }}
+                        className="btn-delete px-4 py-1 bg-gray-100 border border-gray-300 rounded-full font-semibold hover:bg-gray-200 transition"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 text-xs text-gray-500">
+                    Créé: {furniture.created_at} • mis à jour:{" "}
+                    {furniture.updated_at}
+                  </div>
+
+                  <div className="mt-2 text-xs text-gray-500">
+                    Couleur: {furniture.color || "N/A"} • Matériau:{" "}
+                    {furniture.material || "N/A"} • Par utilisateur:{" "}
+                    {furniture.user_mail || "N/A"}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </main>
+        </div>
+        <Footer />
+      </Authorization>
     </div>
   );
 }
