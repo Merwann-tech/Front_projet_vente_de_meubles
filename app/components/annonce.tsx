@@ -66,12 +66,9 @@ export default function Annonce() {
       },
       body: data,
     });
-    if (res.status !== 201) {
+    if (res.status !== 200) {
       window.location.href = "/";
-      console.log(res);
-    }
-    let response = await res.json();
-    if (response["success"] === "furniture add") {
+    }else{
       window.location.reload();
     }
   };
