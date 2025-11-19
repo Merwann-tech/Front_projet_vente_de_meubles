@@ -12,6 +12,9 @@ const Navbar: React.FC<NavbarProps> = ({ role }) => {
       <Link href="/" className="font-bold">
         Accueil
       </Link>
+      <Link href="/annonces" className="btn-primary">
+        Annonces
+      </Link>
       <div className="ml-auto flex items-center gap-2">
         {(role === "user" || role === "moderator" || role === "admin") && (
           <>

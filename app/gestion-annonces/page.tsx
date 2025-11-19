@@ -258,7 +258,9 @@ export default function GestionAnnonces() {
                             } else {
                               let data = await response.json();
                               alert(data["success"]);
-                              window.location.reload();
+                                setFurnitures((prev) =>
+                                prev.filter((f) => f.id !== furniture.id)
+                                );
                             }
                           });
                         }
