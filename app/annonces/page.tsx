@@ -30,7 +30,7 @@ export default function AnnoncesPage() {
   const [annonces, setAnnonces] = useState<any[]>([]);
 
   const router = useRouter();
-
+  const [buyLoadingId, setBuyLoadingId] = useState<string | null>(null);
   useEffect(() => {
     const fetchFilters = async () => {
       try {
@@ -113,6 +113,66 @@ export default function AnnoncesPage() {
     fetchAnnonces();
   }, []);
 
+   // --- Fonction d'achat ---
+  const handleBuy = async (annonce: any) => {
+    // identifiant unique pour loading
+    const id = annonce.id ?? annonce._id ?? annonce.title;
+    setBuyLoadingId(id);
+
+    try {
+      // Prépare le payload à envoyer au backend
+      const payload: any = {
+        quantity: 1,
+        // metadata utile pour relier session -> annonce en webhook
+        metadata: { annonceId: annonce.id ?? annonce._id ?? null },
+      };
+
+      // Option A: si tes annonces contiennent un price_id (price_xxx), envoie-le
+      if (annonce.price_id) {
+        payload.priceId = annonce.price_id;
+      } else {
+        // Option B: si pas de price_id, envoie le montant (cents) et le nom produit
+        // ATTENTION: le montant doit être validé côté serveur !
+        payload.amount = Math.round((annonce.price ?? 0) * 100); // euros -> cents
+        payload.product_name = annonce.title ?? "Produit";
+      }
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/strip/create-checkout-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Erreur lors de la création de la session");
+      }
+
+      const data = await res.json();
+
+      // Dans le flow redirect, on attend { url: 'https://checkout.stripe.com/...' }
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+
+      // Si backend renvoie clientSecret pour embedded checkout (rare ici), gérer différemment
+      if (data.clientSecret) {
+        // ici tu pourrais initialiser EmbeddedCheckoutProvider si tu veux l'embed
+        console.warn("Received clientSecret — embedded flow not implemented in this front");
+        alert("Embedded checkout non pris en charge pour l'instant.");
+        return;
+      }
+
+      throw new Error("Aucune URL de session reçue du serveur");
+    } catch (err: any) {
+      console.error("Erreur handleBuy:", err);
+      alert("Erreur lors du paiement : " + (err.message ?? "inconnue"));
+    } finally {
+      setBuyLoadingId(null);
+    }
+  };
+
   return (
     <div className="bg-gray-50 text-gray-900 flex flex-col min-h-screen">
       <NavbarWrapper />
@@ -153,7 +213,10 @@ export default function AnnoncesPage() {
                 {open.ville && (
                   <div className="space-y-1 pl-2">
                     {cityList.map((city) => (
-                      <label key={city.name} className="flex items-center gap-2">
+                      <label
+                        key={city.name}
+                        className="flex items-center gap-2"
+                      >
                         <input
                           type="checkbox"
                           value={city.name}
@@ -187,7 +250,10 @@ export default function AnnoncesPage() {
                 {open.type && (
                   <div className="space-y-1 pl-2">
                     {typeList.map((type) => (
-                      <label key={type.name} className="flex items-center gap-2">
+                      <label
+                        key={type.name}
+                        className="flex items-center gap-2"
+                      >
                         <input
                           type="checkbox"
                           value={type.name}
@@ -221,7 +287,10 @@ export default function AnnoncesPage() {
                 {open.couleur && (
                   <div className="space-y-1 pl-2">
                     {colorList.map((color) => (
-                      <label key={color.name} className="flex items-center gap-2">
+                      <label
+                        key={color.name}
+                        className="flex items-center gap-2"
+                      >
                         <input
                           type="checkbox"
                           value={color.name}
@@ -321,58 +390,67 @@ export default function AnnoncesPage() {
                   Aucune annonce trouvée.
                 </div>
               ) : (
-                annonces.map((annonce, idx) => (
-                  <article
-                    key={idx}
-                    className="bg-white rounded-2xl shadow-md p-6 flex flex-col md:flex-row gap-6 items-start"
-                  >
-                    <div className="w-full md:w-48 h-32 bg-gray-100 rounded-xl shrink-0 overflow-hidden flex items-center justify-center">
-                      {annonce.images && annonce.images.split(",")[0] ? (
-                        <img
-                          src={
-                            process.env.NEXT_PUBLIC_URL +
-                            annonce.images.split(",")[0]
-                          }
-                          alt={annonce.title || "meuble"}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-gray-400 text-sm">
-                          Aucune image
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                        <h2 className="text-2xl font-bold text-teal-700">
-                          {annonce.title}
-                        </h2>
-                        <button className="text-base text-white bg-teal-600 px-6 py-2 rounded-full font-semibold hover:bg-teal-700 transition shadow">
-                          Acheter
-                        </button>
+                annonces.map((annonce, idx) => {
+                  const id = annonce.id ?? annonce._id ?? annonce.title;
+                  return (
+                    <article
+                      key={idx}
+                      className="bg-white rounded-2xl shadow-md p-6 flex flex-col md:flex-row gap-6 items-start"
+                    >
+                      <div className="w-full md:w-48 h-32 bg-gray-100 rounded-xl shrink-0 overflow-hidden flex items-center justify-center">
+                        {annonce.images && annonce.images.split(",")[0] ? (
+                          <img
+                            src={
+                              process.env.NEXT_PUBLIC_URL +
+                              annonce.images.split(",")[0]
+                            }
+                            alt={annonce.title || "meuble"}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-gray-400 text-sm">
+                            Aucune image
+                          </span>
+                        )}
                       </div>
-                      <div className="text-gray-600 text-sm mb-2">
-                        {[
-                          annonce.city,
-                          annonce.type,
-                          annonce.color,
-                          annonce.material,
-                        ]
-                          .filter(Boolean)
-                          .join(" • ")}
-                      </div>
-                      <p className="text-gray-800 mb-2">{annonce.description}</p>
-                      <div className="flex items-center justify-between pt-2">
-                        <div className="text-xl font-bold text-teal-700">
-                          {annonce.price} €
+                      <div className="flex-1">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                          <h2 className="text-2xl font-bold text-teal-700">
+                            {annonce.title}
+                          </h2>
+                           <button
+                              className="text-base text-white bg-teal-600 px-6 py-2 rounded-full font-semibold hover:bg-teal-700 transition shadow disabled:opacity-50"
+                              onClick={() => handleBuy(annonce)}
+                              disabled={buyLoadingId !== null}
+                            >
+                              {buyLoadingId === id ? "Redirection..." : "Acheter"}
+                            </button>
                         </div>
-                        <span className="text-xs text-gray-500">
-                          Publié le {annonce.created_at?.slice(0, 10)}
-                        </span>
+                        <div className="text-gray-600 text-sm mb-2">
+                          {[
+                            annonce.city,
+                            annonce.type,
+                            annonce.color,
+                            annonce.material,
+                          ]
+                            .filter(Boolean)
+                            .join(" • ")}
+                        </div>
+                        <p className="text-gray-800 mb-2">
+                          {annonce.description}
+                        </p>
+                        <div className="flex items-center justify-between pt-2">
+                          <div className="text-xl font-bold text-teal-700">
+                            {annonce.price} €
+                          </div>
+                          <span className="text-xs text-gray-500">
+                            Publié le {annonce.created_at?.slice(0, 10)}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </article>
-                ))
+                    </article>
+                  );
+                })
               )}
             </section>
           </div>
