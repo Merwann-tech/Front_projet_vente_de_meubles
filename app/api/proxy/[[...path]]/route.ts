@@ -1,4 +1,3 @@
-// app/api/proxy/[[...path]]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND = process.env.BACKEND_URL;
@@ -13,22 +12,26 @@ function filterResponseHeaders(headers: Headers) {
   return out;
 }
 
-async function proxy(req: NextRequest, params: { path?: string[] } = {}) {
+/**
+ * params may be a plain object or a Promise (Next.js may pass a Promise).
+ * We await it to "unwrap" the value before using params.path.
+ */
+async function proxy(req: NextRequest, paramsPromise: any = {}) {
   const backendBase = process.env.BACKEND_URL;
   if (!backendBase) return NextResponse.json({ error: 'BACKEND_URL not configured' }, { status: 500 });
 
-  // 1) essayer params.path (catch-all), sinon extraire depuis le pathname
-  let path = (params.path || []).join('/');
+  const params = await paramsPromise; // <- important: unwrap possible Promise
+
+  // 1) try params.path (catch-all), otherwise extract from pathname
+  let path = (params?.path || []).join('/');
   if (!path) {
-    // req.nextUrl.pathname exemple: /api/proxy/furnitures/typeListe
     const pathname = req.nextUrl.pathname || '';
-    path = pathname.replace(/^\/api\/proxy\/?/, ''); // => "furnitures/typeListe" ou ""
+    path = pathname.replace(/^\/api\/proxy\/?/, ''); // -> "furnitures/typeListe" or ""
   }
 
   const query = req.nextUrl.search || '';
   const target = path ? `${backendBase.replace(/\/$/, '')}/${path}${query}` : `${backendBase.replace(/\/$/, '')}${query}`;
 
-  console.log('[proxy] target=', target, 'method=', req.method);
 
   const headers = new Headers(req.headers);
   headers.delete('host');
@@ -39,7 +42,9 @@ async function proxy(req: NextRequest, params: { path?: string[] } = {}) {
     try {
       const buf = await req.arrayBuffer();
       if (buf && buf.byteLength) body = Buffer.from(buf);
-    } catch (e) { body = undefined; }
+    } catch (e) {
+      body = undefined;
+    }
   }
 
   try {
@@ -62,9 +67,9 @@ async function proxy(req: NextRequest, params: { path?: string[] } = {}) {
   }
 }
 
-export async function GET(req: NextRequest, ctx: { params: { path?: string[] } }) { return proxy(req, ctx.params); }
-export async function POST(req: NextRequest, ctx: { params: { path?: string[] } }) { return proxy(req, ctx.params); }
-export async function PUT(req: NextRequest, ctx: { params: { path?: string[] } }) { return proxy(req, ctx.params); }
-export async function DELETE(req: NextRequest, ctx: { params: { path?: string[] } }) { return proxy(req, ctx.params); }
-export async function PATCH(req: NextRequest, ctx: { params: { path?: string[] } }) { return proxy(req, ctx.params); }
-export async function OPTIONS(req: NextRequest, ctx: { params: { path?: string[] } }) { return proxy(req, ctx.params); }
+export async function GET(req: NextRequest, ctx: { params?: any }) { return proxy(req, ctx.params); }
+export async function POST(req: NextRequest, ctx: { params?: any }) { return proxy(req, ctx.params); }
+export async function PUT(req: NextRequest, ctx: { params?: any }) { return proxy(req, ctx.params); }
+export async function DELETE(req: NextRequest, ctx: { params?: any }) { return proxy(req, ctx.params); }
+export async function PATCH(req: NextRequest, ctx: { params?: any }) { return proxy(req, ctx.params); }
+export async function OPTIONS(req: NextRequest, ctx: { params?: any }) { return proxy(req, ctx.params); }
