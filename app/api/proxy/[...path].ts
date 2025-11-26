@@ -1,13 +1,15 @@
 export default async function handler(req: { query: { path: any[]; }; url: string; headers: any; method: string; body: BodyInit | null | undefined; }, res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: { error: string; details?: any; }): void; new(): any; }; }; setHeader: (arg0: string, arg1: string) => void; send: (arg0: Buffer<ArrayBuffer>) => void; }) {
-  const path = Array.isArray(req.query.path) ? req.query.path.join('/') : (req.query.path || '');
+  // Correction : s'assurer que path est bien une chaîne et non vide
+  const path = Array.isArray(req.query.path) ? req.query.path.filter(Boolean).join('/') : (req.query.path || '');
   const backendBase = process.env.BACKEND_URL; // définir dans Vercel Dashboard
   if (!backendBase) {
-    return res.status(500).json({ error: 'BACKEND_URL not configured' });
+    return res.status(500).json({ error: 'BACKEND_URL non configurée' });
   }
 
   // Construire l'URL cible en préservant la querystring
   const queryString = req.url.includes('?') ? '?' + req.url.split('?')[1] : '';
-  const targetUrl = `${backendBase.replace(/\/$/, '')}/${path}${queryString}`;
+  // Correction : éviter les doubles slashs dans l'URL finale
+  const targetUrl = `${backendBase.replace(/\/$/, '')}/${path.replace(/^\/+/, '')}${queryString}`;
 
   // Préparer les headers à transférer (supprimer host pour éviter conflits)
   const headers = { ...req.headers };
